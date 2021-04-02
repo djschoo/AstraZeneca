@@ -1,0 +1,93 @@
+---
+title: "Does the AstraZeneca Vaccine Cause Blood Clots?"
+author: "djschoo"
+date: "31/03/2021"
+output: rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+Health Canada recently made the...interesting...decision to suspend the AstraZeneca Covidshield vaccine due to fears that this vaccine causes blood clots. From [this article on CBC](https://www.cbc.ca/news/health/canada-suspends-astrazeneca-vaccine-covid-19-1.5968657), "the decision to halt the use of the vaccine in Canadians under 55 comes after the European Medicines Agency (EMA) investigated 25 cases of the rare blood clots out of about 20 million AstraZeneca shots given."
+
+I was immediately surprised when I heard this. 25 out of 20 million seems *very* small, even if the likelihood of any individual out there getting a blood clot is itself also small. In other words, aren't those unfortunate 25 cases of clots due to random chance that would have happened anyway?
+
+This can be modeled statistically. (Health Canada uses statistics, right?) Let's investigate!
+
+# Binomial Distribution
+
+I believe that this issue of blood clotting can be modeled with a simple binomial distribution. Recall that the binomial distribution models the discrete probability distribution of the number of successes in a sequence of independent experiments, each asking a yes–no question, and each with its own Boolean-valued outcome. 
+
+In other words, each person every day essentially "flips a coin" (albeit a *very* biased one) as to whether they will get a blood clot that day. (In the morbid language of statistics, we will call each clot a "success"). 
+
+If we make a few reasonable assumptions (for example, that everyone has the same probability of getting a "success") the binomial distribution can tell us the probability of observing each potential number of clots.
+
+# Blood Clots 
+
+I duckduckwent "what is the probability of a blood clot?" and got [this website](https://www.stoptheclot.org/blood-clot-information/blood-clots-in-the-united-states/) as the first hit. The article states that "107 to 130 cases of potentially deadly blood clots occurred each year per 100,000 Caucasian individuals from 1985 through 2002. This translates into about 1 to 3 cases per 1,000 people."
+
+I will be conservative and assume that the probability of a clot is 1/1000. (Full confession: I imagine the type of blood clot Health Canada is worried about is far less likely than this; obviously, knowing those numbers could impact the following analysis.)
+
+# Parameters
+
+We now have enough parameters to run our model. These are:
+
+- The probability of a blood clot: $p = 1/1000$
+- The number of "successes" we would like to know the probability of seeing: $x = 25$
+- The total number of trials: $n = 20*10^6$
+
+```{r}
+p = 1/1000
+x = 25
+n = 20*10^6
+```
+
+
+# The Model
+
+## Expected Value of the Binomial Distribution
+
+Before we calculate the probability of observing our data, note that expected value of the binomial distribution is equal to $np$. In our case, this equals $20*10^6 * 1/1000 = 20,000$. 
+
+That means that *if we give out sugar pills to 20 million people, we would expect 20,000 of them to get a blood clot*. I do not need to point out that 20,000 is much, much larger than 25.
+
+## Probability Distribution
+
+We can elaborate on the previous point with a picture. The following shows the probability (the y-axis) of seeing various numbers of blood clots (the x-axis) centered around our expected value.
+
+```{r, warning=F, message=F}
+library(ggplot2)
+
+X = seq(20000 - 1000, 20000 + 1000)
+Y = dbinom(X, n, p)
+df = data.frame(X,Y)
+
+ggplot(df) + aes(x=X, y=Y) + geom_line() + labs(y="probability", x="# of clots")
+```
+
+We can see that the probability is centered around the expected value of 20,000 clots and tapers off such that the probability approaches zero outside the range of 19,500 to 20,500 clots.
+
+In other words, 25 clots is **way less** than even the mininum number of clots that are remotely likely to happen.
+
+## Probability of Exactly 25 People Getting Clots
+
+The visual inspection of the graph above makes it plainly obvious that the probability of seeing exactly 25 clots will (effectively) be zero. But let's prove it nonetheless:
+
+```{r}
+dbinom(x, n, p)
+```
+
+Note that this probability is not **exactly** equal to zero (but it is **very** small). Much like it is technically possible to flip a coin 100 times and get heads each time (the probability of that is $7.888609 * 10^{-31}$, by the way) it is also technically possible to get a mere 25 clots out of 20M people. It is just **incredibly** unlikely.
+
+# Conclusion
+
+AstraZeneca does not cause blood clots. 
+
+It's not even close. If you give AstraZeneca to 20 million people, at least 19,500 of them should get a blood clot. 25?! That's so small it's virtually impossible!
+
+I have no clue if AZ or the other vaccines are safe in the long term (nobody does; but we **do** know that getting Covid is horrible so it seems pretty damn obvious to me that it's worth getting a vaccine). 
+
+Unless I am missing something, the decision to cancel AZ due to fear of blood clots is crazy. The institutions that are making these big decisions need to justify themselves to us!
