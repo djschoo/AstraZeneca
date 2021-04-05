@@ -40,9 +40,17 @@ We now have enough parameters to run our model. These are:
 - The total number of trials: $n = 20*10^6$
 
 ```{r}
+# parameters
 p = 1/(1000*365)
 x = 25
 n = 20*10^6
+
+# calculate probabilities and assign them to a vector df
+X = 0:(55*2)
+Y = dbinom(X, n, p)
+df = data.frame(X,Y)
+
+library(ggplot2)
 ```
 
 
@@ -56,20 +64,14 @@ That means that *if we give out sugar pills to 20 million people, we would expec
 
 ## Probability Distribution
 
-We can elaborate on the previous point with a picture. The following shows the probability (y-axis) of seeing various numbers of blood clots (x-axis) centered around our expected value. I threw in a verticle line in purple at 25 clots.
+We can elaborate on the previous point with a picture. The following shows the probability (y-axis) of seeing various numbers of blood clots (x-axis) centered around our expected value. I threw in a vertical line in purple at 25 clots.
 
 ```{r, warning=F, message=F}
-library(ggplot2)
-
-X = 0:(55*2)
-Y = dbinom(X, n, p)
-df = data.frame(X,Y)
-
 ggplot(df) + 
   aes(x=X, y=Y) + 
   geom_line() + 
   labs(y="probability", x="# of clots") + 
-  geom_vline(aes(xintercept=25, color='purple')) + 
+  geom_vline(aes(xintercept=25), color='purple') + 
   guides(color='none')
 ```
 
@@ -79,20 +81,48 @@ In other words, 25 clots is less than even the minimum number of clots that are 
 
 ## Probability of Exactly 25 People Getting Clots
 
-The visual inspection of the graph above makes it plainly obvious that the probability of seeing exactly 25 clots (or fewer) will (effectively) be zero. But let's prove it nonetheless:
+The visual inspection of the graph above makes it plainly obvious that the probability of seeing exactly 25 clots or more is pretty much guaranteed. But let's prove it nonetheless.
 
-```{r}
-dbinom(x, n, p)
+First, note that the probability of 25 or more clots is equivalent to  the shaded area in the graph below:
+
+```{r, warning=F, message=F}
+df2 = subset(df, X>=20 & X<=90)
+
+ggplot(df2) + 
+  aes(x=X, y=Y) + 
+  geom_line() + 
+  labs(y="probability", x="# of clots") + 
+  guides(color='none') +
+  geom_vline(aes(xintercept=25) , color='purple') + 
+  geom_ribbon(data=subset(df, X >= 25 & X <= 90), aes(ymax=Y, ymin=0), fill='purple', color=NA, alpha=.5)
 ```
 
-That is 0.0003%; ergo effectively zero. Much like it is technically possible to flip a coin 100 times and get heads each time (the probability of that is $7.888609 * 10^{-31}$, by the way) it is also technically possible to get a mere 25 clots. It is just **incredibly** unlikely.
+It's actually hard to see but the graph *isn't* entirely shaded. We can zoom in around 25 and see what's going on:
+
+```{r}
+df3 = subset(df, X>=20 & X<=30)
+
+ggplot(df3) + 
+  aes(x=X, y=Y) + 
+  geom_line() + 
+  labs(y="probability", x="# of clots") + 
+  guides(color='none') +
+  geom_vline(aes(xintercept=25) , color='purple') + 
+  geom_ribbon(data=subset(df, X >= 25 & X <= 30), aes(ymax=Y, ymin=0), fill='purple', color=NA, alpha=.5)
+```
+
+```{r}
+pbinom(q = x, size = n, prob = p, lower.tail = F)
+```
+
+That effectively 100%; ergo, a certainty.
 
 # Conclusion
 
-**There is no evidence suggesting that AstraZeneca causes blood clots! If anything, it prevents them!**
+**There is no evidence suggesting that AstraZeneca causes blood clots!** (If anything, it prevents them!)
 
 If you take 20 million people with or without AstraZeneca, around 55 of them should get a blood clot. If it's a particularly rare un-clotty day, you **might** expect to see about 30 clots. 25 is so low that it's next to impossible!
 
 I have no clue if AZ or the other vaccines are safe in the long term (nobody does). But so far so good, and one thing we **do** know is that getting Covid is horrible, as is transmitting Sars-Cov-2, so it seems pretty obvious to me that it's worth getting a vaccine. 
 
-Unless I am missing something, the decision to cancel AZ due to fear of blood clots is crazy. Stoking hysteria in the public is a bad thing in general and each day that passes is a chance to potentially vaccinate people against a brutal virus.
+Unless I am missing something, the decision to cancel AZ due to fear of blood clots is crazy. Stoking hysteria in the public is a bad thing in general and each day that passes is a chance to potentially vaccinate people against a brutal virus. 
